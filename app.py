@@ -2,7 +2,6 @@ import streamlit as st
 import re
 import io
 import os
-import json
 import time
 import random
 import zipfile
@@ -15,56 +14,30 @@ from curl_cffi import CurlMime
 # ==========================================
 st.set_page_config(page_title="薄荷猫の图床全自动迁移", page_icon="🐱", layout="wide")
 
-st.title("薄荷猫の图床全自动迁移工具")
-import streamlit as st
+st.title("薄荷猫の图床全自动迁移工具(终极安全版)")
 
 st.markdown("""
-**最新升级**：✅ 自动记忆 API 配置 ✅ 智能提取纯净直链 ✅ 支持 Word 文档 ✅ 动态压缩包命名<br>
-*(全程在本地运行，安全、极速、不破坏原代码与排版结构)*<br>
+**最新升级**：✅ 彻底修复多人并发隐私泄露问题 ✅ 智能提取纯净直链 ✅ 支持 Word 文档 ✅ 动态压缩包命名<br>
+*(全程在当前浏览器内存中运行，不留存任何本地配置，安全、极速、不破坏原代码与排版结构)*<br>
 **薄荷猫出品，🈲二传二改**
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 配置持久化逻辑 (本地保存为 config.json)
-# ==========================================
-CONFIG_FILE = "config.json"
-
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-def save_config(endpoint, key):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump({"endpoint": endpoint, "key": key}, f)
-
-# 读取上次保存的配置
-user_config = load_config()
-default_endpoint = user_config.get("endpoint", "https://api.openai.com/v1")
-default_key = user_config.get("key", "")
-
-# ==========================================
-# 侧边栏：AI API 配置
+# 侧边栏：AI API 配置 (基于 Session 内存，刷新即焚)
 # ==========================================
 with st.sidebar:
     st.header("⚙️ 1. 大模型 API 配置")
-    api_endpoint = st.text_input("API Endpoint", value=default_endpoint)
-    api_key = st.text_input("API Key", type="password", value=default_key, placeholder="sk-...")
+    # 不再读取本地文件，直接提供默认端点，Key 强制留空
+    api_endpoint = st.text_input("API Endpoint", value="https://api.openai.com/v1")
+    api_key = st.text_input("API Key", type="password", value="", placeholder="sk-...")
 
     if "available_models" not in st.session_state:
         st.session_state.available_models = []
 
-    if st.button("🔄 测试连接并拉取模型 (自动保存配置)", use_container_width=True):
+    if st.button("🔄 测试连接并拉取模型", use_container_width=True):
         if not api_key:
             st.error("请先填写 API Key！")
         else:
-            # 用户点击时，自动将配置保存到本地文件
-            save_config(api_endpoint, api_key)
-
             with st.spinner("正在连接 API 获取模型..."):
                 try:
                     client = OpenAI(api_key=api_key, base_url=api_endpoint)
@@ -72,7 +45,7 @@ with st.sidebar:
                     models = [m.id for m in models_page.data]
                     models.sort()
                     st.session_state.available_models = models
-                    st.success(f"成功拉取 {len(models)} 个可用模型！配置已永久保存。")
+                    st.success(f"成功拉取 {len(models)} 个可用模型！")
                 except Exception as e:
                     st.error(f"连接失败: {e}")
 
